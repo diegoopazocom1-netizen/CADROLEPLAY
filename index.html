@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guía Rápida de Patologías Digestivas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Calm Neutrals -->
+    <!-- Application Structure Plan: Se ha diseñado una Single-Page Application (SPA) con una estructura de dos columnas: una barra de navegación lateral fija y un área de contenido principal. La navegación lateral permite al usuario seleccionar de forma instantánea una patología específica, lo cual es ideal para un acceso rápido y no lineal a la información durante el estudio o una consulta rápida. El área de contenido utiliza un sistema de pestañas (General, Diagnóstico, Tratamiento) para segmentar la información de cada enfermedad. Esta arquitectura fue elegida porque descompone un gran volumen de datos médicos complejos en fragmentos manejables y contextuales, imitando el proceso mental de un clínico que busca información específica (p. ej., "¿cuáles son los criterios diagnósticos para el SII?") sin tener que desplazarse por un documento extenso. El flujo es: seleccionar patología -> ver resumen -> profundizar en una pestaña específica. -->
+    <!-- Visualization & Content Choices: La información del reporte se presenta a través de distintos métodos interactivos para facilitar la comprensión. Info: Criterios de Roma IV para SII. Goal: Organizar. Viz: Lista estructurada en HTML/CSS. Interaction: Presentación clara y concisa. Justification: Facilita la memorización de criterios diagnósticos clave. Info: Causas de Daño Hepático Crónico. Goal: Comparar. Viz: Gráfico de Donut (Chart.js/Canvas). Interaction: Tooltips al pasar el mouse sobre las secciones. Justification: Ofrece una visión rápida y cuantitativa de la epidemiología. Info: Comparación entre Colitis Ulcerosa y Crohn. Goal: Comparar. Viz: Tabla HTML con Tailwind CSS. Interaction: Lectura comparativa directa. Justification: Esclarece las diferencias fundamentales entre dos patologías a menudo confundidas. La estructura general se basa en la navegación por botones y pestañas (HTML/JS) para un acceso rápido y focalizado al contenido. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 400px;
+            max-height: 40vh;
+        }
+        .sidebar-scroll::-webkit-scrollbar {
+            width: 4px;
+        }
+        .sidebar-scroll::-webkit-scrollbar-thumb {
+            background-color: #4a5568;
+            border-radius: 20px;
+        }
+        .sidebar-scroll::-webkit-scrollbar-track {
+            background-color: #2d3748;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+    <div id="app" class="flex flex-col md:flex-row h-screen">
+        
+        <nav class="bg-slate-800 text-white w-full md:w-64 lg:w-72 flex-shrink-0">
+            <div class="p-4">
+                <h1 class="text-xl font-bold text-center">Patologías Digestivas</h1>
+                <p class="text-xs text-slate-400 text-center mt-1">Guía de Consulta Rápida</p>
+            </div>
+            <ul class="flex flex-row md:flex-col overflow-x-auto md:overflow-y-auto sidebar-scroll md:h-[calc(100vh-80px)]" id="nav-menu">
+                <li class="flex-shrink-0"><button data-pathology="sii" class="nav-button w-full text-left p-3 md:p-4 text-sm font-medium hover:bg-slate-700 transition-colors duration-200">Síndrome de Intestino Irritable</button></li>
+                <li class="flex-shrink-0"><button data-pathology="ulcera" class="nav-button w-full text-left p-3 md:p-4 text-sm font-medium hover:bg-slate-700 transition-colors duration-200">Síndrome Ulceroso Péptico</button></li>
+                <li class="flex-shrink-0"><button data-pathology="colitis" class="nav-button w-full text-left p-3 md:p-4 text-sm font-medium hover:bg-slate-700 transition-colors duration-200">Colitis Ulcerosa / EII</button></li>
+                <li class="flex-shrink-0"><button data-pathology="dhc" class="nav-button w-full text-left p-3 md:p-4 text-sm font-medium hover:bg-slate-700 transition-colors duration-200">Daño Hepático Crónico</button></li>
+                <li class="flex-shrink-0"><button data-pathology="disfagia" class="nav-button w-full text-left p-3 md:p-4 text-sm font-medium hover:bg-slate-700 transition-colors duration-200">Disfagia</button></li>
+                <li class="flex-shrink-0"><button data-pathology="cancer" class="nav-button w-full text-left p-3 md:p-4 text-sm font-medium hover:bg-slate-700 transition-colors duration-200">Cáncer de Colon</button></li>
+                <li class="flex-shrink-0"><button data-pathology="apendicitis" class="nav-button w-full text-left p-3 md:p-4 text-sm font-medium hover:bg-slate-700 transition-colors duration-200">Apendicitis Aguda</button></li>
+                <li class="flex-shrink-0"><button data-pathology="colangitis" class="nav-button w-full text-left p-3 md:p-4 text-sm font-medium hover:bg-slate-700 transition-colors duration-200">Colangitis Aguda</button></li>
+                <li class="flex-shrink-0"><button data-pathology="diverticulitis" class="nav-button w-full text-left p-3 md:p-4 text-sm font-medium hover:bg-slate-700 transition-colors duration-200">Diverticulitis Aguda</button></li>
+            </ul>
+        </nav>
+
+        <main class="flex-1 p-4 md:p-6 lg:p-8 overflow-y-auto">
+            <div id="content-area" class="bg-white rounded-xl shadow-md p-4 md:p-6 min-h-full">
+                <div id="welcome-screen">
+                    <h2 class="text-2xl font-bold text-slate-700">Bienvenido a la Guía de Patologías Digestivas</h2>
+                    <p class="mt-4 text-slate-600">Esta herramienta está diseñada para ayudarte a repasar de forma rápida y eficiente las enfermedades más relevantes del tracto digestivo para tu simulación clínica.</p>
+                    <div class="mt-6 p-4 bg-sky-100 border-l-4 border-sky-500 text-sky-800 rounded-r-lg">
+                        <p class="font-semibold">Instrucciones:</p>
+                        <p class="mt-2 text-sm">Selecciona una patología del menú de la izquierda para ver su información detallada. Utiliza las pestañas para navegar entre las secciones de generalidades, diagnóstico y tratamiento.</p>
+                    </div>
+                    <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                        <div class="bg-slate-100 p-4 rounded-lg">
+                            <h3 class="font-bold mb-2">💡 Tip para la Simulación</h3>
+                            <p>Estructura tu anamnesis. Comienza con la historia de la enfermedad actual (ALICIA: Aparición, Localización, Intensidad, Carácter, Irradiación, Agravantes/Atenuantes), luego antecedentes personales y familiares. ¡No olvides los "red flags"!</p>
+                        </div>
+                        <div class="bg-slate-100 p-4 rounded-lg">
+                            <h3 class="font-bold mb-2">🩺 Examen Físico</h3>
+                            <p>Recuerda la secuencia correcta para el abdomen: Inspección, Auscultación, Percusión y Palpación. Auscultar antes de palpar es crucial para no alterar los ruidos hidroaéreos.</p>
+                        </div>
+                    </div>
+                </div>
+                <div id="pathology-content" class="hidden">
+                    <h2 id="pathology-title" class="text-3xl font-bold text-slate-800 border-b pb-2 mb-4"></h2>
+                    <div id="pathology-tabs" class="mb-4 border-b border-slate-200">
+                    </div>
+                    <div id="pathology-tab-content">
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const pathologiesData = {
+            sii: {
+                title: "Síndrome de Intestino Irritable (SII)",
+                tabs: {
+                    general: {
+                        title: "Generalidades",
+                        content: `
+                            <h3 class="text-xl font-semibold mb-2">Definición</h3>
+                            <p>Es un trastorno funcional gastrointestinal crónico caracterizado por dolor abdominal recurrente y alteración del hábito defecatorio (diarrea, estreñimiento o mixto), en ausencia de una causa orgánica detectable.</p>
+                            
+                            <h3 class="text-xl font-semibold mt-4 mb-2">Fisiopatología y Factores de Riesgo</h3>
+                            <p>Multifactorial. Involucra:</p>
+                            <ul class="list-disc list-inside mt-2 space-y-1 text-slate-600">
+                                <li><strong>Hipersensibilidad visceral:</strong> Percepción aumentada del dolor ante estímulos normales.</li>
+                                <li><strong>Alteración de la motilidad:</strong> Tránsito intestinal acelerado o enlentecido.</li>
+                                <li><strong>Disbiosis intestinal:</strong> Alteración de la microbiota.</li>
+                                <li><strong>Eje cerebro-intestino:</strong> El estrés y factores psicológicos (ansiedad, depresión) son clave.</li>
+                                <li><strong>Factores de riesgo:</strong> Infecciones gastrointestinales previas (SII-PI), estrés, predisposición genética, ser mujer.</li>
+                            </ul>
+
+                            <h3 class="text-xl font-semibold mt-4 mb-2">Epidemiología</h3>
+                            <p>Afecta aproximadamente al 10-15% de la población mundial. Es 1.5-2 veces más común en mujeres. Generalmente se diagnostica antes de los 50 años.</p>
+                        `
+                    },
+                    diagnostico: {
+                        title: "Diagnóstico",
+                        content: `
+                            <h3 class="text-xl font-semibold mb-2">Anamnesis y Tips</h3>
+                            <p>El diagnóstico es clínico, basado en los <strong>Criterios de Roma IV</strong>. Es un diagnóstico de exclusión.</p>
+                            <div class="mt-3 p-4 bg-slate-100 rounded-lg">
+                                <h4 class="font-bold">Criterios de Roma IV para SII</h4>
+                                <p class="mt-1">Dolor abdominal recurrente, en promedio, al menos <strong>1 día a la semana</strong> en los últimos <strong>3 meses</strong>, asociado a dos o más de los siguientes criterios:</p>
+                                <ul class="list-decimal list-inside mt-2 font-medium">
+                                    <li>Relacionado con la defecación.</li>
+                                    <li>Asociado a un cambio en la frecuencia de las deposiciones.</li>
+                                    <li>Asociado a un cambio en la forma (apariencia) de las deposiciones.</li>
+                                </ul>
+                            </div>
+                            <p class="mt-4 font-semibold">Tips para la anamnesis:</p>
+                            <ul class="list-disc list-inside mt-2 text-slate-600">
+                                <li>Preguntar por la escala de Bristol para objetivar la forma de las heces.</li>
+                                <li>Indagar sobre la relación de los síntomas con alimentos específicos (lactosa, gluten, FODMAPs).</li>
+                                <li>¡Buscar <strong>"Red Flags"</strong>! Su presencia obliga a descartar patología orgánica.</li>
+                            </ul>
+
+                            <h3 class="text-xl font-semibold mt-4 mb-2">"Red Flags" (Banderas Rojas)</h3>
+                            <div class="p-4 bg-red-100 border-l-4 border-red-500 text-red-800 rounded-r-lg">
+                                <ul class="list-disc list-inside space-y-1">
+                                    <li>Inicio de síntomas > 50 años.</li>
+                                    <li>Pérdida de peso no intencionada.</li>
+                                    <li>Sangrado rectal o melena.</li>
+                                    <li>Anemia ferropénica.</li>
+                                    <li>Masa abdominal palpable.</li>
+                                    <li>Historia familiar de cáncer de colon o EII.</li>
+                                    <li>Síntomas nocturnos que despiertan al paciente.</li>
+                                </ul>
+                            </div>
+
+                            <h3 class="text-xl font-semibold mt-4 mb-2">Exámenes</h3>
+                            <p>Si no hay "red flags", se requieren mínimos exámenes. El objetivo es descartar otras patologías.</p>
+                            <ul class="list-disc list-inside mt-2 text-slate-600">
+                                <li><strong>Hemograma completo:</strong> Descartar anemia.</li>
+                                <li><strong>PCR o Calprotectina fecal:</strong> Marcadores de inflamación. Si son normales, apoyan el diagnóstico de SII. Una calprotectina elevada (>50-100 µg/g) sugiere EII.</li>
+                                <li><strong>Serología para enfermedad celíaca (Ac. anti-transglutaminasa IgA).</strong></li>
+                                <li><strong>Colonoscopía:</strong> Indicada si hay "red flags" o en mayores de 45-50 años para screening de cáncer.</li>
+                            </ul>
+                        `
+                    },
+                    tratamiento: {
+                        title: "Tratamiento y Manejo",
+                        content: `
+                            <h3 class="text-xl font-semibold mb-2">Pilares del Tratamiento</h3>
+                            <p>El manejo es multifacético y centrado en el síntoma predominante.</p>
+                            <ol class="list-decimal list-inside space-y-2 mt-2">
+                                <li><strong>Relación médico-paciente:</strong> Validar los síntomas del paciente y explicar la naturaleza crónica y benigna de la enfermedad.</li>
+                                <li><strong>Cambios conductuales y dieta:</strong>
+                                    <ul class="list-disc list-inside ml-4 mt-1 text-slate-600">
+                                        <li>Aumentar actividad física.</li>
+                                        <li>Manejo del estrés (terapia cognitivo-conductual, mindfulness).</li>
+                                        <li><strong>Dieta baja en FODMAPs:</strong> Es la intervención dietética con más evidencia. Se realiza en 3 fases (restricción, reintroducción, personalización).</li>
+                                        <li>Evitar irritantes conocidos (cafeína, alcohol, grasas).</li>
+                                    </ul>
+                                </li>
+                                <li><strong>Tratamiento farmacológico (sintomático):</strong>
+                                    <ul class="list-disc list-inside ml-4 mt-1 text-slate-600">
+                                        <li><strong>SII-Estreñimiento:</strong> Fibra soluble (Psyllium), laxantes osmóticos (polietilenglicol).</li>
+                                        <li><strong>SII-Diarrea:</strong> Loperamida (uso a demanda), Rifaximina (antibiótico no absorbible).</li>
+                                        <li><strong>Dolor abdominal:</strong> Antiespasmódicos (trimebutina), aceite de menta. Antidepresivos tricíclicos (amitriptilina) o ISRS a dosis bajas por su efecto en la modulación del dolor visceral.</li>
+                                    </ul>
+                                </li>
+                            </ol>
+                            <h3 class="text-xl font-semibold mt-4 mb-2">Indicaciones al Paciente</h3>
+                            <p class="mt-2 p-4 bg-sky-100 rounded-lg text-sky-800">"Lo que usted tiene es el Síndrome de Intestino Irritable. Es una condición real y crónica, pero no es grave ni se convertirá en cáncer. Su intestino es más sensible de lo normal. Vamos a trabajar juntos para controlar sus síntomas con cambios en la dieta, manejo del estrés y, si es necesario, algunos medicamentos para el dolor o para regular su tránsito."</p>
+                        `
+                    }
+                }
+            },
+            ulcera: {
+                title: "Síndrome Ulceroso Péptico",
+                tabs: {
+                    general: {
+                        title: "Generalidades",
+                        content: `
+                            <h3 class="text-xl font-semibold mb-2">Definición</h3>
+                            <p>Corresponde a la presencia de una úlcera (pérdida de sustancia que sobrepasa la muscular de la mucosa) en el estómago o el duodeno, causada por un desequilibrio entre factores agresores (ácido, pepsina) y protectores (moco, bicarbonato) de la mucosa gastroduodenal.</p>
+                            
+                            <h3 class="text-xl font-semibold mt-4 mb-2">Fisiopatología y Causas Principales</h3>
+                            <p>La barrera mucosa se rompe, permitiendo que el ácido dañe el tejido subyacente.</p>
+                            <ul class="list-disc list-inside mt-2 space-y-1 text-slate-600">
+                                <li><strong>Infección por <em>Helicobacter pylori</em> (~70-90% de las úlceras duodenales):</strong> La bacteria debilita la barrera de moco y aumenta la secreción de ácido.</li>
+                                <li><strong>Uso de AINEs (Antiinflamatorios no esteroideos):</strong> Inhiben las prostaglandinas, que son cruciales para la protección de la mucosa.</li>
+                                <li><strong>Otras causas (raras):</strong> Síndrome de Zollinger-Ellison (gastrinoma), estrés fisiológico severo (quemaduras, sepsis), tabaquismo, alcohol.</li>
+                            </ul>
+
+                            <h3 class="text-xl font-semibold mt-4 mb-2">Epidemiología</h3>
+                            <p>La incidencia ha disminuido gracias a la erradicación de H. pylori y al uso de inhibidores de la bomba de protones (IBP). El riesgo aumenta con la edad y el uso de AINEs.</p>
+                        `
+                    },
+                    diagnostico: {
+                        title: "Diagnóstico",
+                        content: `
+                            <h3 class="text-xl font-semibold mb-2">Anamnesis y Clínica</h3>
+                            <p>El síntoma cardinal es el <strong>dolor epigástrico</strong>, típicamente descrito como urente o "hambre dolorosa".</p>
+                            <div class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="p-4 bg-slate-100 rounded-lg">
+                                    <h4 class="font-bold">Úlcera Duodenal (más común)</h4>
+                                    <ul class="list-disc list-inside mt-2 text-sm">
+                                        <li>Dolor que <strong>mejora</strong> con la ingesta de alimentos.</li>
+                                        <li>Dolor que aparece 2-3 horas postprandial.</li>
+                                        <li>Puede despertar al paciente en la noche.</li>
+                                    </ul>
+                                </div>
+                                <div class="p-4 bg-slate-100 rounded-lg">
+                                    <h4 class="font-bold">Úlcera Gástrica</h4>
+                                    <ul class="list-disc list-inside mt-2 text-sm">
+                                        <li>Dolor que <strong>empeora</strong> con la ingesta de alimentos.</li>
+                                        <li>Asociado a náuseas y pérdida de peso.</li>
+                                    </ul>
+                                </div>
+                            </div>
+                             <p class="mt-4 font-semibold">Tips para la anamnesis:</p>
+                            <ul class="list-disc list-inside mt-2 text-slate-600">
+                                <li>Preguntar dirigidamente por consumo de AINEs (¡incluyendo aspirina a dosis bajas!).</li>
+                                <li>Investigar síntomas de alarma: disfagia, pérdida de peso, vómitos persistentes, anemia, melena/hematemesis.</li>
+                            </ul>
+                            
+                            <h3 class="text-xl font-semibold mt-4 mb-2">Diagnóstico y Exámenes</h3>
+                            <p>El estándar de oro es la <strong>Endoscopía Digestiva Alta (EDA)</strong>.</p>
+                            <ul class="list-disc list-inside mt-2 text-slate-600">
+                                <li><strong>EDA:</strong> Permite visualizar directamente la úlcera, tomar biopsias para descartar malignidad (¡siempre en úlceras gástricas!) y para detectar <em>H. pylori</em> (test de ureasa rápida).</li>
+                                <li><strong>Detección de <em>H. pylori</em>:</strong>
+                                    <ul class="list-disc list-inside ml-4">
+                                        <li><strong>Invasivos (requieren EDA):</strong> Test de ureasa rápida, histología, cultivo.</li>
+                                        <li><strong>No invasivos:</strong> Test de antígeno en deposiciones (de elección para confirmar erradicación), test de aire espirado con urea.</li>
+                                    </ul>
+                                </li>
+                            </ul>
+
+                             <h3 class="text-xl font-semibold mt-4 mb-2">Complicaciones</h3>
+                            <div class="p-4 bg-red-100 border-l-4 border-red-500 text-red-800 rounded-r-lg">
+                                <ul class="list-disc list-inside space-y-1">
+                                    <li><strong>Hemorragia Digestiva Alta (HDA):</strong> La más común. Se presenta como hematemesis o melena.</li>
+                                    <li><strong>Perforación:</strong> Dolor abdominal súbito, intenso, "en puñalada", con signos de peritonismo (abdomen en tabla). Requiere cirugía urgente.</li>
+                                    <li><strong>Penetración:</strong> La úlcera invade órganos adyacentes (p.ej., páncreas).</li>
+                                    <li><strong>Obstrucción pilórica:</strong> Por edema o cicatrización. Causa vómitos postprandiales.</li>
+                                </ul>
+                            </div>
+                        `
+                    },
+                    tratamiento: {
+                        title: "Tratamiento y Manejo",
+                        content: `
+                            <h3 class="text-xl font-semibold mb-2">Tratamiento Médico</h3>
+                            <ol class="list-decimal list-inside space-y-2 mt-2">
+                                <li><strong>Inhibidores de la Bomba de Protones (IBP):</strong> Omeprazol, esomeprazol, etc. Son la base del tratamiento. Se administran por 4-8 semanas para permitir la cicatrización.</li>
+                                <li><strong>Erradicación de <em>H. pylori</em> (si está presente):</strong> Esquema triple o cuádruple con antibióticos y un IBP por 10-14 días. Por ejemplo: IBP + Claritromicina + Amoxicilina.</li>
+                                <li><strong>Suspender AINEs:</strong> Si es posible. Si no, usar la dosis mínima efectiva, asociar un IBP o cambiar a un COX-2 selectivo.</li>
+                            </ol>
+                            
+                            <h3 class="text-xl font-semibold mt-4 mb-2">Manejo de Complicaciones</h3>
+                            <ul class="list-disc list-inside mt-2 text-slate-600">
+                                <li><strong>HDA:</strong> Manejo endoscópico (inyección de adrenalina, clips) + IBP en altas dosis endovenosas.</li>
+                                <li><strong>Perforación:</strong> Cirugía de urgencia (parche de Graham).</li>
+                            </ul>
+
+                            <h3 class="text-xl font-semibold mt-4 mb-2">Indicaciones al Paciente</h3>
+                            <p class="mt-2 p-4 bg-sky-100 rounded-lg text-sky-800">"Hemos encontrado una úlcera, que es como una herida en el revestimiento de su estómago/duodeno. La causa más probable es una bacteria o los antiinflamatorios que ha estado tomando. El tratamiento consiste en un medicamento muy efectivo para reducir el ácido y permitir que cicatrice, y si es necesario, antibióticos para eliminar la bacteria. Es crucial que evite los antiinflamatorios y el tabaco."</p>
+                        `
+                    }
+                }
+            },
+            colitis: {
+                title: "Colitis Ulcerosa (CU) / Enfermedad Inflamatoria Intestinal (EII)",
+                tabs: {
+                    general: {
+                        title: "Generalidades",
+                        content: `
+                            <h3 class="text-xl font-semibold mb-2">Definición</h3>
+                            <p>La Enfermedad Inflamatoria Intestinal (EII) es un término que agrupa dos enfermedades crónicas que causan inflamación del tracto digestivo: la <strong>Colitis Ulcerosa (CU)</strong> y la <strong>Enfermedad de Crohn (EC)</strong>.</p>
+                            <p class="mt-2">La <strong>Colitis Ulcerosa</strong> se caracteriza por una inflamación difusa y continua que se limita a la <strong>mucosa del colon</strong>. Casi siempre comienza en el recto (proctitis) y se extiende de forma proximal y continua.</p>
+
+                            <h3 class="text-xl font-semibold mt-4 mb-2">Fisiopatología y Factores de Riesgo</h3>
+                            <p>Es una enfermedad autoinmune. Se cree que en individuos genéticamente predispuestos, una respuesta inmune desregulada contra la microbiota intestinal desencadena la inflamación crónica. </p>
+                            <ul class="list-disc list-inside mt-2 text-slate-600">
+                                <li><strong>Factores genéticos:</strong> Fuerte asociación familiar.</li>
+                                <li><strong>Factores ambientales:</strong> El <strong>tabaquismo</strong> es un factor protector para la CU (pero un factor de riesgo para Crohn). Dieta occidental.</li>
+                                <li><strong>Respuesta inmune:</strong> Disfunción de la barrera intestinal y respuesta inmune anómala.</li>
+                            </ul>
+
+                            <h3 class="text-xl font-semibold mt-4 mb-2">Epidemiología</h3>
+                            <p>Tiene una distribución bimodal de edad de inicio: un pico entre los 15-30 años y otro más pequeño entre los 50-70 años. Prevalencia en aumento en países en desarrollo.</p>
+                        `
+                    },
+                    diagnostico: {
+                        title: "Diagnóstico",
+                        content: `
+                            <h3 class="text-xl font-semibold mb-2">Clínica</h3>
+                            <p>El síntoma cardinal es la <strong>diarrea con sangre (rectorragia)</strong>. Otros síntomas incluyen:</p>
+                            <ul class="list-disc list-inside mt-2 text-slate-600">
+                                <li>Pujo y tenesmo rectal (sensación de evacuación incompleta).</li>
+                                <li>Urgencia defecatoria.</li>
+                                <li>Dolor abdominal tipo cólico, generalmente en el cuadrante inferior izquierdo.</li>
+                                <li>Síntomas sistémicos en brotes severos: fiebre, pérdida de peso, taquicardia.</li>
+                            </ul>
+                            
+                            <h3 class="text-xl font-semibold mt-4 mb-2">Diagnóstico y Exámenes</h3>
+                            <p>Se basa en la combinación de hallazgos clínicos, endoscópicos, histológicos y de laboratorio.</p>
+                            <ul class="list-disc list-inside mt-2 text-slate-600">
+                                <li><strong>Laboratorio:</strong> Anemia, elevación de PCR y VHS, trombocitosis. Hipoalbuminemia en casos severos.</li>
+                                <li><strong>Calprotectina fecal:</strong> Marcador muy útil para detectar inflamación intestinal. Valores > 150-250 µg/g son altamente sugestivos. Sirve para monitorizar la actividad.</li>
+                                <li><strong>Colonoscopía con biopsias:</strong> Es el <strong>gold standard</strong>. Muestra una mucosa eritematosa, friable, con pérdida del patrón vascular, exudados y úlceras. La inflamación es continua desde el recto. Las biopsias confirman la inflamación crónica (criptitis, abscesos crípticos).</li>
+                            </ul>
+                            
+                            <h3 class="text-xl font-semibold mt-4 mb-2">Comparación Clave: Colitis Ulcerosa vs. Enfermedad de Crohn</h3>
+                            <div class="overflow-x-auto mt-2">
+                                <table class="w-full text-sm text-left text-slate-600">
+                                    <thead class="text-xs text-slate-700 uppercase bg-slate-100">
+                                        <tr>
+                                            <th scope="col" class="py-3 px-6">Característica</th>
+                                            <th scope="col" class="py-3 px-6">Colitis Ulcerosa</th>
+                                            <th scope="col" class="py-3 px-6">Enfermedad de Crohn</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr class="bg-white border-b">
+                                            <td class="py-4 px-6 font-medium">Localización</td>
+                                            <td class="py-4 px-6">Solo colon, continua, empieza en recto</td>
+                                            <td class="py-4 px-6">Cualquier parte del TGI ("boca a ano"), segmentaria ("parches")</td>
+                                        </tr>
+                                        <tr class="bg-slate-50 border-b">
+                                            <td class="py-4 px-6 font-medium">Profundidad</td>
+                                            <td class="py-4 px-6">Mucosa y submucosa</td>
+                                            <td class="py-4 px-6">Transmural (toda la pared)</td>
+                                        </tr>
+                                         <tr class="bg-white border-b">
+                                            <td class="py-4 px-6 font-medium">Síntoma principal</td>
+                                            <td class="py-4 px-6">Diarrea con sangre</td>
+                                            <td class="py-4 px-6">Dolor abdominal, pérdida de peso</td>
+                                        </tr>
+                                        <tr class="bg-slate-50 border-b">
+                                            <td class="py-4 px-6 font-medium">Complicaciones</td>
+                                            <td class="py-4 px-6">Megacolon tóxico, cáncer de colon</td>
+                                            <td class="py-4 px-6">Fístulas, estenosis, abscesos</td>
+                                        </tr>
+                                        <tr class="bg-white">
+                                            <td class="py-4 px-6 font-medium">Tabaquismo</td>
+                                            <td class="py-4 px-6">Factor protector</td>
+                                            <td class="py-4 px-6">Factor de riesgo</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        `
+                    },
+                    tratamiento: {
+                        title: "Tratamiento y Manejo",
+                        content: `
+                            <h3 class="text-xl font-semibold mb-2">Objetivos del Tratamiento</h3>
+                            <p>Inducir y mantener la remisión clínica y endoscópica, prevenir complicaciones y mejorar la calidad de vida.</p>
+                            
+                            <h3 class="text-xl font-semibold mt-4 mb-2">Esquema de Tratamiento ("Step-Up")</h3>
+                            <p>El tratamiento depende de la severidad y extensión de la enfermedad.</p>
+                            <ul class="list-disc list-inside mt-2 space-y-2 text-slate-600">
+                                <li><strong>Enfermedad Leve a Moderada:</strong>
+                                    <ul class="list-disc list-inside ml-4 mt-1">
+                                        <li><strong>Aminosalicilatos (5-ASA):</strong> Mesalazina. Es la primera línea. Se puede dar oral o tópico (supositorios, enemas) dependiendo de la extensión.</li>
+                                    </ul>
+                                </li>
+                                <li><strong>Enfermedad Moderada a Severa:</strong>
+                                    <ul class="list-disc list-inside ml-4 mt-1">
+                                        <li><strong>Corticoides:</strong> Prednisona oral o metilprednisolona IV para inducir la remisión en brotes. ¡No son para mantenimiento!</li>
+                                        <li><strong>Inmunomoduladores:</strong> Azatioprina, 6-mercaptopurina. Para mantener la remisión y ahorrar corticoides.</li>
+                                        <li><strong>Terapia Biológica:</strong> Anti-TNF (Infliximab, Adalimumab), Anti-integrinas (Vedolizumab), Anti-IL12/23 (Ustekinumab). Para casos refractarios.</li>
+                                    </ul>
+                                </li>
+                                 <li><strong>Cirugía (Colectomía):</strong> Curativa para la CU. Se indica en casos refractarios al tratamiento médico, displasia/cáncer o complicaciones como megacolon tóxico.</li>
+                            </ul>
+                             <h3 class="text-xl font-semibold mt-4 mb-2">Complicación Aguda Grave: Megacolon Tóxico</h3>
+                            <div class="p-4 bg-red-100 border-l-4 border-red-500 text-red-800 rounded-r-lg">
+                                <p>Es una emergencia médica. Se define como una dilatación del colon > 6 cm con signos de toxicidad sistémica (fiebre, taquicardia, leucocitosis). Requiere manejo intensivo con corticoides IV y posible cirugía de urgencia si no hay respuesta.</p>
+                            </div>
+                        `
+                    }
+                }
+            },
+            dhc: {
+                title: "Daño Hepático Crónico (DHC) y sus Complicaciones",
+                tabs: {
+                    general: {
+                        title: "Generalidades",
+                        content: `
+                            <h3 class="text-xl font-semibold mb-2">Definición</h3>
+                            <p>El DHC o cirrosis hepática es la etapa final de diversas enfermedades hepáticas crónicas. Se caracteriza por fibrosis difusa y la conversión de la arquitectura normal del hígado en nódulos estructuralmente anormales. Esto lleva a una insuficiencia hepatocelular y a hipertensión portal.</p>
+                             <div class="mt-4 flex flex-col md:flex-row items-center gap-4">
+                                <div class="flex-1">
+                                    <h3 class="text-xl font-semibold mb-2">Causas Principales</h3>
+                                    <ul class="list-disc list-inside mt-2 space-y-1 text-slate-600">
+                                        <li><strong>Consumo crónico de alcohol.</strong></li>
+                                        <li><strong>Hígado graso no alcohólico (NAFLD/NASH):</strong> Causa en aumento, ligada a la obesidad y síndrome metabólico.</li>
+                                        <li><strong>Hepatitis virales crónicas (VHB, VHC).</strong></li>
+                                        <li><strong>Enfermedades autoinmunes:</strong> Hepatitis autoinmune, colangitis biliar primaria.</li>
+                                        <li><strong>Otras:</strong> Hemocromatosis, enfermedad de Wilson.</li>
+                                    </ul>
+                                </div>
+                                <div class="flex-1 w-full">
+                                    <div class="chart-container h-64 md:h-80"><canvas id="dhcChart"></canvas></div>
+                                    <p class="text-center text-xs text-slate-500 mt-2">Distribución aproximada de causas de DHC en el mundo occidental.</p>
+                                </div>
+                            </div>
+                        `
+                    },
+                    diagnostico: {
+                        title: "Diagnóstico",
+                        content: `
+                            <h3 class="text-xl font-semibold mb-2">Clínica y Anamnesis</h3>
+                            <p>En etapas compensadas puede ser asintomática. En etapas descompensadas aparecen los estigmas de hepatopatía crónica y las complicaciones.</p>
+                            <ul class="list-disc list-inside mt-2 text-slate-600">
+                                <li><strong>Anamnesis:</strong> Preguntar por consumo de alcohol (CAGE), factores de riesgo para hepatitis virales, historia de diabetes/obesidad.</li>
+                                <li><strong>Examen físico:</strong> Buscar ictericia, arañas vasculares, eritema palmar, ginecomastia, "flapping" o asterixis (encefalopatía), ascitis, circulación colateral (cabeza de medusa).</li>
+                            </ul>
+                             <h3 class="text-xl font-semibold mt-4 mb-2">Exámenes y Scores</h3>
+                             <ul class="list-disc list-inside mt-2 text-slate-600">
+                                <li><strong>Laboratorio:</strong> Trombocitopenia (primer signo), hipoalbuminemia, aumento del INR (refleja la función de síntesis), aumento de bilirrubina, transaminasas (pueden ser normales en etapas finales). Relación AST/ALT > 2 sugiere etiología alcohólica.</li>
+                                <li><strong>Imagenología:</strong> Ecografía abdominal muestra un hígado nodular, de bordes irregulares, y puede detectar ascitis, esplenomegalia y evaluar permeabilidad de la vena porta.</li>
+                                <li><strong>Elastografía (FibroScan):</strong> Mide la rigidez del hígado, útil para cuantificar la fibrosis de forma no invasiva.</li>
+                                <li><strong>Scores de pronóstico:</strong>
+                                    <ul class="list-disc list-inside ml-4">
+                                        <li><strong>Child-Pugh:</strong> Clasifica la severidad (A, B, C) basándose en Bilirrubina, Albumina, INR, Ascitis y Encefalopatía.</li>
+                                        <li><strong>MELD:</strong> Usado para priorizar en lista de trasplante hepático. Usa Bilirrubina, INR y Creatinina.</li>
+                                    </ul>
+                                </li>
+                             </ul>
+                             <h3 class="text-xl font-semibold mt-4 mb-2">Complicaciones</h3>
+                            <div class="p-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 rounded-r-lg space-y-2">
+                                <p><strong>Ascitis:</strong> Acumulación de líquido en el peritoneo. Se maneja con restricción de sodio y diuréticos (espironolactona + furosemida). Si es a tensión o para diagnóstico, se realiza <strong>paracentesis</strong>. En el líquido se mide albúmina (para calcular GASA) y recuento celular.</p>
+                                <p><strong>Peritonitis Bacteriana Espontánea (PBE):</strong> Infección del líquido ascítico SIN un foco intraabdominal. Sospechar en todo cirrótico con ascitis que se descompensa (fiebre, dolor abdominal, encefalopatía). Diagnóstico: <strong>PMN > 250/mm³</strong> en líquido ascítico. Tratamiento: Cefalosporinas de 3ra generación (cefotaxima, ceftriaxona).</p>
+                                <p><strong>Encefalopatía Hepática:</strong> Disfunción cerebral por acúmulo de amonio. Se manifiesta con asterixis, confusión, letargo. Tratamiento: Lactulosa, Rifaximina.</p>
+                            </div>
+                        `
+                    },
+                    tratamiento: {
+                        title: "Tratamiento y Manejo",
+                        content: `
+                            <h3 class="text-xl font-semibold mb-2">Manejo General</h3>
+                            <p>El tratamiento se enfoca en la causa subyacente y en prevenir y manejar las complicaciones.</p>
+                            <ul class="list-disc list-inside mt-2 text-slate-600">
+                                <li><strong>Tratar la causa:</strong> Abstinencia total de alcohol, tratamiento antiviral para VHB/VHC, etc.</li>
+                                <li><strong>Dieta:</strong> Restricción de sodio (para ascitis), dieta normoproteica (la restricción de proteínas solo se considera en encefalopatía refractaria).</li>
+                                <li><strong>Screening:</strong>
+                                    <ul class="list-disc list-inside ml-4">
+                                        <li><strong>Várices esofágicas:</strong> EDA al momento del diagnóstico y periódicamente.</li>
+                                        <li><strong>Hepatocarcinoma (HCC):</strong> Ecografía abdominal cada 6 meses.</li>
+                                    </ul>
+                                </li>
+                                <li><strong>Profilaxis:</strong>
+                                    <ul class="list-disc list-inside ml-4">
+                                        <li><strong>Várices:</strong> Beta-bloqueadores no selectivos (propanolol, carvedilol) o ligadura endoscópica para prevenir primer sangrado.</li>
+                                        <li><strong>PBE:</strong> Profilaxis antibiótica (norfloxacino, ciprofloxacino) en pacientes de alto riesgo (ej. post-PBE, proteínas bajas en líquido ascítico).</li>
+                                    </ul>
+                                </li>
+                                <li><strong>Trasplante Hepático:</strong> Es el único tratamiento curativo en etapas avanzadas.</li>
+                            </ul>
+                            <h3 class="text-xl font-semibold mt-4 mb-2">Indicaciones al Paciente</h3>
+                            <p class="mt-2 p-4 bg-sky-100 rounded-lg text-sky-800">"Su hígado tiene cicatrices avanzadas, lo que llamamos cirrosis. Esto afecta su funcionamiento. Es fundamental que deje de beber alcohol por completo / tratemos su hepatitis. Deberá seguir una dieta baja en sal y tomar estos medicamentos para controlar la acumulación de líquido. Haremos controles regulares con ecografías y endoscopías para vigilar posibles complicaciones. El objetivo es mantener su hígado estable el mayor tiempo posible."</p>
+                        `
+                    }
+                }
+            },
+            disfagia: {
+                title: "Disfagia",
+                tabs: {
+                    general: {
+                        title: "Generalidades",
+                        content: `
+                            <h3 class="text-xl font-semibold mb-2">Definición</h3>
+                            <p>Es la <strong>dificultad para tragar</strong>. Es un síntoma, no una enfermedad, y siempre debe ser estudiado. Se clasifica en <strong>orofaríngea</strong> (dificultad para iniciar la deglución) y <strong>esofágica</strong> (sensación de que el alimento se atasca en el pecho o cuello).</p>
+                             <div class="mt-4 p-4 bg-slate-100 rounded-lg">
+                                <h4 class="font-bold">Disfagia Orofaríngea (de transferencia)</h4>
+                                <p class="mt-1">El problema está en pasar el bolo de la boca a la faringe y al esófago superior.</p>
+                                <ul class="list-disc list-inside mt-2 text-sm text-slate-600">
+                                    <li><strong>Clínica:</strong> Tos o ahogo al intentar tragar, regurgitación nasal, necesidad de múltiples degluciones, neumonías aspirativas a repetición.</li>
+                                    <li><strong>Causas comunes:</strong> Neurológicas (ACV, Parkinson, ELA, miastenia gravis), estructurales (divertículo de Zenker, tumores).</li>
+                                </ul>
+                            </div>
+                            <div class="mt-4 p-4 bg-slate-100 rounded-lg">
+                                <h4 class="font-bold">Disfagia Esofágica</h4>
+                                <p class="mt-1">El problema está en el paso del bolo a través del esófago.</p>
+                                <ul class="list-disc list-inside mt-2 text-sm text-slate-600">
+                                     <li><strong>Clínica:</strong> Sensación de "atasco" retroesternal.</li>
+                                     <li><strong>Se sub-clasifica en:</strong>
+                                        <ul class="list-disc list-inside ml-4">
+                                            <li><strong>Mecánica (obstructiva):</strong> Dificultad principalmente para <strong>sólidos</strong>.</li>
+                                            <li><strong>Motora:</strong> Dificultad para <strong>sólidos y líquidos</strong> desde el inicio.</li>
+                                        </ul>
+                                     </li>
+                                </ul>
+                            </div>
+                        `
+                    },
+                    diagnostico: {
+                        title: "Diagnóstico",
+                        content: `
+                            <h3 class="text-xl font-semibold mb-2">Anamnesis: La Clave del Diagnóstico</h3>
+                            <p>La historia clínica dirige todo el estudio. Las preguntas clave son:</p>
+                            <ol class="list-decimal list-inside space-y-2 mt-2">
+                                <li><strong>¿Dónde siente el problema? ¿En la garganta o en el pecho?</strong> (Diferencia orofaríngea de esofágica).</li>
+                                <li><strong>¿La dificultad es con sólidos, líquidos o ambos?</strong>
+                                    <ul class="list-disc list-inside ml-4 mt-1 text-slate-600">
+                                        <li><strong>Solo sólidos:</strong> Sugiere una obstrucción mecánica.</li>
+                                        <li><strong>Sólidos y líquidos desde el principio:</strong> Sugiere un trastorno motor.</li>
+                                    </ul>
+                                </li>
+                                <li><strong>¿Es intermitente o progresiva?</strong>
+                                     <ul class="list-disc list-inside ml-4 mt-1 text-slate-600">
+                                        <li><strong>Progresiva (sólidos -> líquidos) + pérdida de peso + edad > 50:</strong> ¡Sospechar <strong>cáncer</strong>!</li>
+                                        <li><strong>Intermitente con sólidos:</strong> Puede ser un anillo esofágico (Schatzki).</li>
+                                    </ul>
+                                </li>
+                                <li><strong>¿Hay síntomas asociados?</strong> Pirosis (ERGE), dolor torácico (acalasia, espasmo esofágico), síntomas neurológicos.</li>
+                            </ol>
+                            
+                            <h3 class="text-xl font-semibold mt-4 mb-2">Algoritmo Diagnóstico Simplificado</h3>
+                            <div class="p-4 bg-sky-100 rounded-lg text-sm">
+                                <p><strong>1. Sospecha de Disfagia Orofaríngea:</strong> El estudio de elección es la <strong>Videofluoroscopía de la deglución</strong>.</p>
+                                <p class="mt-2"><strong>2. Sospecha de Disfagia Esofágica:</strong> El primer examen es siempre una <strong>Endoscopía Digestiva Alta (EDA)</strong>.
+                                    <ul class="list-disc list-inside ml-4 mt-1">
+                                        <li>Permite ver obstrucciones (tumores, estenosis), tomar biopsias y a veces tratar (dilatar).</li>
+                                        <li>Si la EDA es normal y se sospecha trastorno motor (disfagia a líquidos y sólidos), el siguiente paso es la <strong>Manometría esofágica de alta resolución</strong>, que mide las presiones y la motilidad del esófago (diagnostica acalasia, espasmo esofágico, etc.).</li>
+                                    </ul>
+                                </p>
+                            </div>
+                        `
+                    },
+                    tratamiento: {
+                        title: "Tratamiento y Manejo",
+                        content: `
+                            <h3 class="text-xl font-semibold mb-2">Tratamiento según la Causa</h3>
+                            <p>El manejo depende enteramente de la etiología subyacente.</p>
+                             <ul class="list-disc list-inside mt-2 space-y-2 text-slate-600">
+                                <li><strong>Disfagia Orofaríngea:</strong>
+                                    <ul class="list-disc list-inside ml-4">
+                                        <li>Manejo por fonoaudiólogo (terapia de deglución, cambios posturales, modificación de consistencia de alimentos).</li>
+                                        <li>Tratamiento de la causa neurológica.</li>
+                                    </ul>
+                                </li>
+                                <li><strong>Disfagia Esofágica Mecánica:</strong>
+                                    <ul class="list-disc list-inside ml-4">
+                                        <li><strong>Estenosis péptica (por ERGE):</strong> Dilatación endoscópica + IBP a largo plazo.</li>
+                                        <li><strong>Anillo de Schatzki:</strong> Dilatación endoscópica.</li>
+                                        <li><strong>Cáncer de esófago:</strong> Manejo oncológico (cirugía, quimio/radioterapia), prótesis esofágicas paliativas.</li>
+                                         <li><strong>Esofagitis eosinofílica:</strong> IBP, corticoides deglutidos, dieta de eliminación.</li>
+                                    </ul>
+                                </li>
+                                <li><strong>Disfagia Esofágica Motora:</strong>
+                                    <ul class="list-disc list-inside ml-4">
+                                        <li><strong>Acalasia:</strong> Relajar el esfínter esofágico inferior. Opciones: dilatación neumática endoscópica, miotomía endoscópica (POEM) o quirúrgica (Heller), toxina botulínica.</li>
+                                        <li><strong>Espasmo esofágico difuso:</strong> Nitratos, bloqueadores de canales de calcio, antidepresivos tricíclicos.</li>
+                                    </ul>
+                                </li>
+                            </ul>
+                            <h3 class="text-xl font-semibold mt-4 mb-2">Indicaciones al Paciente</h3>
+                            <p class="mt-2 p-4 bg-sky-100 rounded-lg text-sky-800">"La dificultad para tragar que siente se llama disfagia, y es muy importante que la estudiemos para encontrar la causa exacta. El primer paso será un examen con una cámara (endoscopía) para ver su esófago por dentro. Dependiendo de lo que encontremos, definiremos el mejor tratamiento para usted."</p>
+                        `
+                    }
+                }
+            },
+            cancer: {
+                title: "Cáncer de Colon",
+                tabs: {
+                    general: {
+                        title: "Generalidades",
+                        content: `
+                            <h3 class="text-xl font-semibold mb-2">Definición</h3>
+                            <p>Es una neoplasia maligna que se origina en el epitelio de la mucosa del colon o recto (cáncer colorrectal, CCR). La mayoría (>95%) son <strong>adenocarcinomas</strong> que se desarrollan a partir de pólipos adenomatosos a lo largo de varios años (secuencia adenoma-carcinoma).</p>
+                            <h3 class="text-xl font-semibold mt-4 mb-2">Fisiopatología y Factores de Riesgo</h3>
+                            <p>Acumulación de mutaciones genéticas que transforman la mucosa normal en un pólipo y luego en un carcinoma invasor.</p>
+                            <ul class="list-disc list-inside mt-2 space-y-1 text-slate-600">
+                                <li><strong>Edad:</strong> El riesgo aumenta significativamente > 50 años.</li>
+                                <li><strong>Historia personal o familiar:</strong> CCR previo, pólipos adenomatosos, EII (Colitis Ulcerosa).</li>
+                                <li><strong>Síndromes genéticos (~5%):</strong> Poliposis adenomatosa familiar (PAF), Síndrome de Lynch (cáncer colorrectal hereditario no polipósico).</li>
+                                <li><strong>Factores de estilo de vida:</strong> Dieta alta en carnes rojas y procesadas, baja en fibra; obesidad, sedentarismo, tabaquismo, alto consumo de alcohol.</li>
+                            </ul>
+                            <h3 class="text-xl font-semibold mt-4 mb-2">Epidemiología</h3>
+                            <p>Es uno de los cánceres más comunes y una de las principales causas de muerte por cáncer en el mundo. Su incidencia está aumentando en adultos jóvenes.</p>
+                        `
+                    },
+                    diagnostico: {
+                        title: "Diagnóstico",
+                        content: `
+                            <h3 class="text-xl font-semibold mb-2">Clínica (depende de la localización)</h3>
+                            <p>Puede ser asintomático por mucho tiempo, de ahí la importancia del screening.</p>
+                             <div class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="p-4 bg-slate-100 rounded-lg">
+                                    <h4 class="font-bold">Colon Derecho (ascendente)</h4>
+                                    <p class="text-sm">El lumen es más ancho, los tumores crecen sin obstruir.</p>
+                                    <ul class="list-disc list-inside mt-2 text-sm">
+                                        <li><strong>Anemia ferropénica</strong> inexplicable (por sangrado oculto crónico).</li>
+                                        <li>Fatiga, debilidad.</li>
+                                        <li>Masa palpable en fosa ilíaca derecha (tardío).</li>
+                                    </ul>
+                                </div>
+                                <div class="p-4 bg-slate-100 rounded-lg">
+                                    <h4 class="font-bold">Colon Izquierdo (descendente/sigmoides)</h4>
+                                     <p class="text-sm">El lumen es más estrecho, los tumores tienden a obstruir.</p>
+                                    <ul class="list-disc list-inside mt-2 text-sm">
+                                        <li><strong>Cambio del hábito intestinal</strong> (estreñimiento progresivo, heces acintadas).</li>
+                                        <li><strong>Rectorragia o hematoquecia</strong> (sangre roja en heces).</li>
+                                        <li>Dolor abdominal, síntomas de obstrucción.</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <h3 class="text-xl font-semibold mt-4 mb-2">Diagnóstico y Etapificación</h3>
+                             <ul class="list-disc list-inside mt-2 text-slate-600">
+                                <li><strong>Colonoscopía:</strong> Es el <strong>gold standard</strong>. Permite visualizar todo el colon, identificar el tumor y tomar biopsias para confirmación histológica.</li>
+                                <li><strong>Laboratorio:</strong> Hemograma (anemia), pruebas de función hepática. El <strong>Antígeno Carcinoembrionario (ACE)</strong> no sirve para diagnóstico, pero es útil para seguimiento post-tratamiento.</li>
+                                <li><strong>Etapificación:</strong> Una vez confirmado el diagnóstico, se realiza un <strong>TC de tórax, abdomen y pelvis</strong> con contraste para buscar metástasis (hígado y pulmón son los sitios más comunes). Para cáncer de recto, la <strong>Resonancia Magnética de pelvis</strong> es crucial para evaluar la invasión local.</li>
+                             </ul>
+                              <h3 class="text-xl font-semibold mt-4 mb-2">Screening (Población de riesgo promedio)</h3>
+                            <p>El objetivo es detectar y remover pólipos antes de que se malignicen. La recomendación general es empezar a los <strong>45-50 años</strong>.</p>
+                            <ul class="list-disc list-inside mt-2 text-slate-600">
+                                <li><strong>Métodos de elección:</strong> Colonoscopía cada 10 años.</li>
+                                <li><strong>Alternativas:</strong> Test de sangre oculta en deposiciones (anual), sigmoidoscopía cada 5 años.</li>
+                            </ul>
+                        `
+                    },
+                    tratamiento: {
+                        title: "Tratamiento y Manejo",
+                        content: `
+                            <h3 class="text-xl font-semibold mb-2">Tratamiento por Etapas</h3>
+                            <p>El manejo es multidisciplinario (cirujano, oncólogo, radioterapeuta).</p>
+                             <ul class="list-disc list-inside mt-2 space-y-2 text-slate-600">
+                                <li><strong>Enfermedad localizada (Etapas I-III):</strong>
+                                    <ul class="list-disc list-inside ml-4">
+                                        <li><strong>Cirugía:</strong> Es el pilar del tratamiento curativo. Se realiza una colectomía segmentaria con resección de los ganglios linfáticos regionales (hemicolectomía derecha/izquierda, sigmoidectomía).</li>
+                                        <li><strong>Quimioterapia adyuvante:</strong> Se administra después de la cirugía en Etapa III (ganglios positivos) y en algunos casos de Etapa II de alto riesgo para reducir la probabilidad de recurrencia.</li>
+                                        <li><strong>Para Cáncer de Recto (Etapas II-III):</strong> Generalmente se administra quimio y radioterapia <strong>neoadyuvante</strong> (antes de la cirugía) para reducir el tamaño del tumor y mejorar las tasas de resección y control local.</li>
+                                    </ul>
+                                </li>
+                                 <li><strong>Enfermedad metastásica (Etapa IV):</strong>
+                                    <ul class="list-disc list-inside ml-4">
+                                        <li>El tratamiento es paliativo, con el objetivo de prolongar la supervivencia y mejorar la calidad de vida.</li>
+                                        <li>Se basa en <strong>quimioterapia sistémica</strong> y <strong>terapias biológicas</strong> (dirigidas a marcadores moleculares como RAS, BRAF).</li>
+                                        <li>En casos seleccionados con metástasis limitadas (ej. solo en hígado), se puede considerar la resección quirúrgica de las metástasis.</li>
+                                    </ul>
+                                </li>
+                             </ul>
+                              <h3 class="text-xl font-semibold mt-4 mb-2">Indicaciones al Paciente</h3>
+                            <p class="mt-2 p-4 bg-sky-100 rounded-lg text-sky-800">"La biopsia confirmó la presencia de un cáncer en su colon. La buena noticia es que, en esta etapa, el tratamiento principal es la cirugía para remover el tumor, lo cual ofrece una alta probabilidad de curación. Después de la operación, y dependiendo del análisis final de lo que saquemos, podríamos necesitar un tratamiento adicional con quimioterapia para asegurarnos de eliminar cualquier célula que pudiera haber quedado."</p>
+                        `
+                    }
+                }
+            },
+            apendicitis: {
+                title: "Apendicitis Aguda",
+                tabs: {
+                    general: {
+                        title: "Generalidades",
+                        content: `
+                            <h3 class="text-xl font-semibold mb-2">Definición</h3>
+                            <p>Es la inflamación aguda del apéndice vermiforme. Es la emergencia quirúrgica abdominal más común en el mundo.</p>
+                            <h3 class="text-xl font-semibold mt-4 mb-2">Fisiopatología</h3>
+                            <p>La causa es la <strong>obstrucción de la luz apendicular</strong>. Esto puede ser por un fecalito (heces duras), hiperplasia linfoide (común en niños), un cuerpo extraño o un tumor. La obstrucción lleva a la acumulación de moco, aumento de la presión intraluminal, compromiso del flujo sanguíneo, isquemia, proliferación bacteriana y finalmente, necrosis y perforación.</p>
+                            <h3 class="text-xl font-semibold mt-4 mb-2">Epidemiología</h3>
+                            <p>El peak de incidencia ocurre entre los 10 y 30 años. Es ligeramente más común en hombres.</p>
+                        `
+                    },
+                    diagnostico: {
+                        title: "Diagnóstico",
+                        content: `
+                            <h3 class="text-xl font-semibold mb-2">Clínica Clásica</h3>
+                            <p>La presentación típica es una secuencia de síntomas:</p>
+                            <ol class="list-decimal list-inside space-y-2 mt-2">
+                                <li><strong>Dolor periumbilical o epigástrico:</strong> Es el primer síntoma. Sordo, mal localizado (dolor visceral).</li>
+                                <li><strong>Anorexia, náuseas y vómitos:</strong> Ocurren después del inicio del dolor.</li>
+                                <li><strong>Migración del dolor:</strong> En 4-6 horas, el dolor se localiza en el <strong>cuadrante inferior derecho (CID)</strong>, en el punto de McBurney. Se vuelve más agudo y localizado (dolor parietal).</li>
+                            </ol>
+                            <h3 class="text-xl font-semibold mt-4 mb-2">Examen Físico</h3>
+                             <ul class="list-disc list-inside mt-2 text-slate-600">
+                                <li>Febrícula (37.5-38.5 °C).</li>
+                                <li><strong>Signos clave en CID:</strong>
+                                    <ul class="list-disc list-inside ml-4">
+                                        <li><strong>Signo de McBurney positivo:</strong> Dolor a la palpación en el punto de McBurney (unión del tercio externo con los dos tercios internos de una línea entre la espina ilíaca anterosuperior y el ombligo).</li>
+                                        <li><strong>Signo de Blumberg (rebote) positivo:</strong> Dolor al retirar bruscamente la mano tras la palpación profunda. Indica irritación peritoneal.</li>
+                                        <li><strong>Signo de Rovsing positivo:</strong> Dolor en CID al palpar el cuadrante inferior izquierdo.</li>
+                                        <li><strong>Signo del Psoas:</strong> Dolor al extender la cadera derecha (apéndice retrocecal).</li>
+                                        <li><strong>Signo del Obturador:</strong> Dolor al rotar internamente la cadera derecha flexionada (apéndice pélvico).</li>
+                                    </ul>
+                                </li>
+                             </ul>
+                             <h3 class="text-xl font-semibold mt-4 mb-2">Exámenes</h3>
+                             <p>La apendicitis es principalmente un <strong>diagnóstico clínico</strong>. Los exámenes apoyan la sospecha.</p>
+                              <ul class="list-disc list-inside mt-2 text-slate-600">
+                                <li><strong>Laboratorio:</strong> Leucocitosis con neutrofilia, PCR elevada.</li>
+                                <li><strong>Score de Alvarado:</strong> Escala clínica que ayuda a estratificar el riesgo (basa en Síntomas, Signos y Laboratorio). Un puntaje > 7 tiene alta probabilidad de apendicitis.</li>
+                                <li><strong>Imagenología:</strong> No es necesaria en casos claros. Se usa en pacientes con presentación atípica (mujeres en edad fértil, ancianos, niños).
+                                    <ul class="list-disc list-inside ml-4">
+                                        <li><strong>Ecografía abdominal:</strong> De elección en niños y embarazadas. Busca un apéndice no compresible, engrosado (>6 mm), con líquido libre.</li>
+                                        <li><strong>TC de abdomen y pelvis con contraste:</strong> Es el más sensible y específico. De elección en adultos cuando el diagnóstico es dudoso.</li>
+                                    </ul>
+                                </li>
+                             </ul>
+                        `
+                    },
+                    tratamiento: {
+                        title: "Tratamiento y Manejo",
+                        content: `
+                            <h3 class="text-xl font-semibold mb-2">Tratamiento</h3>
+                            <p>El tratamiento estándar es la <strong>apendicectomía</strong> (extirpación quirúrgica del apéndice).</p>
+                             <ul class="list-disc list-inside mt-2 text-slate-600">
+                                <li><strong>Manejo preoperatorio:</strong> Régimen cero, hidratación endovenosa, analgesia y antibióticos de amplio espectro (que cubran gramnegativos y anaerobios, ej. Ceftriaxona + Metronidazol).</li>
+                                <li><strong>Cirugía:</strong> Puede ser abierta o, más comúnmente hoy en día, <strong>laparoscópica</strong>. La laparoscopía ofrece menos dolor postoperatorio y una recuperación más rápida.</li>
+                             </ul>
+                            <h3 class="text-xl font-semibold mt-4 mb-2">Apendicitis Complicada (Perforada)</h3>
+                            <p>Si el apéndice se perfora, puede formar un <strong>plastrón</strong> (una masa inflamatoria contenida) o un <strong>absceso</strong>.</p>
+                             <ul class="list-disc list-inside mt-2 text-slate-600">
+                                <li><strong>Manejo no quirúrgico inicial:</strong> En un paciente estable con un plastrón o absceso, se puede optar por tratamiento con antibióticos IV y drenaje percutáneo del absceso (si existe). La apendicectomía se realiza de forma diferida (6-8 semanas después).</li>
+                                <li>Si el paciente está séptico o con peritonitis difusa, la cirugía de urgencia es mandatoria.</li>
+                             </ul>
+                             <h3 class="text-xl font-semibold mt-4 mb-2">Indicaciones al Paciente</h3>
+                            <p class="mt-2 p-4 bg-sky-100 rounded-lg text-sky-800">"Los síntomas que tiene y lo que encontramos en el examen físico son muy sugerentes de una apendicitis. Esto es una inflamación de una pequeña parte de su intestino llamada apéndice. Para evitar que se complique, el tratamiento es una operación para extirparlo. Es una cirugía muy común y segura. Lo vamos a preparar para la operación ahora."</p>
+                        `
+                    }
+                }
+            },
+            colangitis: {
+                title: "Colangitis Aguda",
+                tabs: {
+                    general: {
+                        title: "Generalidades",
+                        content: `
+                            <h3 class="text-xl font-semibold mb-2">Definición</h3>
+                            <p>Es una <strong>infección bacteriana ascendente de la vía biliar</strong>, casi siempre secundaria a una obstrucción del flujo de bilis.</p>
+                            <h3 class="text-xl font-semibold mt-4 mb-2">Fisiopatología</h3>
+                            <p>Se requieren dos factores: <strong>obstrucción biliar</strong> y <strong>bacterobilia</strong> (presencia de bacterias en la bilis). La obstrucción causa estasis biliar, lo que permite la proliferación bacteriana. La presión elevada en la vía biliar fuerza a las bacterias y endotoxinas a pasar a la circulación sistémica, causando bacteriemia y sepsis.</p>
+                            <ul class="list-disc list-inside mt-2 text-slate-600">
+                                <li><strong>Causa más común de obstrucción: Coledocolitiasis</strong> (cálculos en el colédoco).</li>
+                                <li>Otras causas: Estenosis benignas o malignas (cáncer de páncreas, colangiocarcinoma), procedimientos biliares previos (stents).</li>
+                            </ul>
+                        `
+                    },
+                    diagnostico: {
+                        title: "Diagnóstico",
+                        content: `
+                            <h3 class="text-xl font-semibold mb-2">Clínica Clásica</h3>
+                            <p>El diagnóstico se basa en una alta sospecha clínica.</p>
+                            <div class="mt-3 p-4 bg-yellow-100 rounded-lg">
+                                <h4 class="font-bold">Tríada de Charcot (presente en 50-70% de los casos)</h4>
+                                <ol class="list-decimal list-inside mt-2 font-medium">
+                                    <li>Fiebre (con escalofríos).</li>
+                                    <li>Ictericia (coloración amarilla de piel y mucosas).</li>
+                                    <li>Dolor en hipocondrio derecho.</li>
+                                </ol>
+                            </div>
+                            <div class="mt-4 p-4 bg-red-100 border-l-4 border-red-500 text-red-800 rounded-r-lg">
+                                <h4 class="font-bold">Péntada de Reynolds (indica colangitis supurativa con sepsis severa)</h4>
+                                <p>Tríada de Charcot +</p>
+                                <ol class="list-decimal list-inside mt-2 font-medium" start="4">
+                                    <li>Hipotensión / Shock séptico.</li>
+                                    <li>Confusión mental / Compromiso de conciencia.</li>
+                                </ol>
+                                <p class="mt-2 font-bold">¡Es una emergencia médica con alta mortalidad!</p>
+                            </div>
+                             <h3 class="text-xl font-semibold mt-4 mb-2">Diagnóstico y Exámenes (Guías de Tokio 2018)</h3>
+                             <p>Se requiere un ítem de A, uno de B y uno de C.</p>
+                              <ul class="list-none mt-2 space-y-2">
+                                <li><strong>A. Inflamación sistémica:</strong> Fiebre, leucocitosis, PCR elevada.</li>
+                                <li><strong>B. Colestasis:</strong> Ictericia (Bilirrubina total > 2 mg/dL), alteración de pruebas hepáticas (GGT, FA, transaminasas elevadas).</li>
+                                <li><strong>C. Imagenología:</strong> Dilatación de la vía biliar y/o evidencia de la causa (ej. cálculo en colédoco) en ecografía, TC o colangio-resonancia.</li>
+                             </ul>
+                             <h3 class="text-xl font-semibold mt-4 mb-2">Estudio por Imágenes</h3>
+                              <ul class="list-disc list-inside mt-2 text-slate-600">
+                                <li><strong>Ecografía abdominal:</strong> Es el primer examen. Puede mostrar dilatación de la vía biliar (>6-7 mm) y a veces el cálculo en el colédoco.</li>
+                                <li><strong>TC o Colangio-RM:</strong> Más sensibles para ver la causa y nivel de la obstrucción.</li>
+                              </ul>
+                        `
+                    },
+                    tratamiento: {
+                        title: "Tratamiento y Manejo",
+                        content: `
+                            <h3 class="text-xl font-semibold mb-2">Manejo en 3 Pilares</h3>
+                            <p>La colangitis es una emergencia. El tratamiento debe ser rápido.</p>
+                            <ol class="list-decimal list-inside space-y-2 mt-2">
+                                <li><strong>Medidas de soporte y resucitación:</strong>
+                                    <ul class="list-disc list-inside ml-4">
+                                        <li>Hidratación endovenosa agresiva.</li>
+                                        <li>Manejo de la sepsis (vasopresores si hay shock).</li>
+                                        <li>Monitoreo en una unidad de paciente crítico si es necesario.</li>
+                                    </ul>
+                                </li>
+                                <li><strong>Antibioticoterapia empírica de amplio espectro:</strong>
+                                    <ul class="list-disc list-inside ml-4">
+                                        <li>Debe iniciarse inmediatamente tras la sospecha diagnóstica.</li>
+                                        <li>Cubrir bacilos gramnegativos y anaerobios (ej. Ceftriaxona + Metronidazol, o Piperacilina/Tazobactam).</li>
+                                    </ul>
+                                </li>
+                                <li><strong>Drenaje Biliar:</strong>
+                                    <ul class="list-disc list-inside ml-4">
+                                        <li>Es el tratamiento <strong>definitivo</strong> porque resuelve la obstrucción. El timing depende de la severidad.</li>
+                                        <li><strong>CPRE (Colangiopancreatografía Retrógrada Endoscópica):</strong> Es el método de elección. Permite realizar una papilotomía (corte del esfínter de Oddi) y extraer los cálculos o instalar un stent para drenar la vía biliar. Se realiza de forma urgente (en < 24h) en casos severos, o de forma temprana (en 24-48h) en casos moderados.</li>
+                                        <li><strong>Alternativas (si CPRE falla o no está disponible):</strong> Drenaje percutáneo transhepático (CPTH) o drenaje quirúrgico abierto.</li>
+                                    </ul>
+                                </li>
+                            </ol>
+                             <h3 class="text-xl font-semibold mt-4 mb-2">Indicaciones al Paciente</h3>
+                            <p class="mt-2 p-4 bg-sky-100 rounded-lg text-sky-800">"Usted tiene una infección grave en los conductos del hígado llamada colangitis, causada por un cálculo que está bloqueando el flujo de la bilis. Esto es una emergencia. Vamos a iniciar antibióticos potentes ahora mismo y a prepararlo para un procedimiento llamado CPRE, donde usaremos una cámara para entrar por su boca y remover ese cálculo para que la bilis pueda volver a fluir."</p>
+                        `
+                    }
+                }
+            },
+            diverticulitis: {
+                title: "Diverticulitis Aguda",
+                tabs: {
+                    general: {
+                        title: "Generalidades",
+                        content: `
+                            <h3 class="text-xl font-semibold mb-2">Definición</h3>
+                            <p>La <strong>diverticulosis</strong> es la presencia de divertículos (pequeñas hernias o sacos) en la pared del colon, más comúnmente en el sigmoides. La <strong>diverticulitis</strong> es la inflamación e infección de uno de estos divertículos.</p>
+                            <h3 class="text-xl font-semibold mt-4 mb-2">Fisiopatología</h3>
+                            <p>Se cree que los divertículos se forman por un aumento de la presión intraluminal en el colon. La diverticulitis ocurre cuando un divertículo se obstruye con un fecalito, lo que lleva a una micro o macroperforación, causando inflamación y contaminación pericólica.</p>
+                             <h3 class="text-xl font-semibold mt-4 mb-2">Factores de Riesgo para Diverticulosis</h3>
+                            <ul class="list-disc list-inside mt-2 text-slate-600">
+                                <li>Edad avanzada.</li>
+                                <li>Dieta baja en fibra.</li>
+                                <li>Obesidad, sedentarismo.</li>
+                                <li>Tabaquismo, consumo de AINEs.</li>
+                            </ul>
+                        `
+                    },
+                    diagnostico: {
+                        title: "Diagnóstico",
+                        content: `
+                            <h3 class="text-xl font-semibold mb-2">Clínica</h3>
+                            <p>Es a menudo llamada "la apendicitis del lado izquierdo".</p>
+                             <ul class="list-disc list-inside mt-2 text-slate-600">
+                                <li><strong>Dolor abdominal en Cuadrante Inferior Izquierdo (CII):</strong> Es el síntoma más común. Constante, de inicio gradual.</li>
+                                <li>Fiebre.</li>
+                                <li>Cambio del hábito intestinal (estreñimiento o diarrea).</li>
+                                <li>Náuseas, vómitos.</li>
+                                <li>Masa palpable y dolorosa en CII.</li>
+                             </ul>
+                            <h3 class="text-xl font-semibold mt-4 mb-2">Examen Físico y Laboratorio</h3>
+                            <ul class="list-disc list-inside mt-2 text-slate-600">
+                                <li>Dolor a la palpación en CII, a veces con defensa muscular.</li>
+                                <li>Leucocitosis, PCR elevada.</li>
+                            </ul>
+                             <h3 class="text-xl font-semibold mt-4 mb-2">Diagnóstico por Imágenes</h3>
+                            <p>El <strong>TC de abdomen y pelvis con contraste</strong> es el examen de elección.</p>
+                             <ul class="list-disc list-inside mt-2 text-slate-600">
+                                <li>Confirma el diagnóstico (engrosamiento de la pared del colon, inflamación de la grasa pericólica).</li>
+                                <li>Evalúa la severidad y detecta complicaciones (abscesos, fístulas, perforación con neumoperitoneo).</li>
+                                <li>Permite clasificar la enfermedad (Clasificación de Hinchey).</li>
+                             </ul>
+                             <div class="mt-4 p-4 bg-red-100 border-l-4 border-red-500 text-red-800 rounded-r-lg">
+                                <p class="font-bold">¡Importante!</p>
+                                <p>La <strong>colonoscopía está contraindicada en la fase aguda</strong> de la diverticulitis por el riesgo de perforación. Se debe realizar de forma diferida (6-8 semanas después del episodio) para descartar un cáncer de colon subyacente.</p>
+                            </div>
+                        `
+                    },
+                    tratamiento: {
+                        title: "Tratamiento y Manejo",
+                        content: `
+                            <h3 class="text-xl font-semibold mb-2">Manejo según Severidad</h3>
+                            <p>El tratamiento depende de si es complicada o no complicada.</p>
+                            <div class="mt-3 p-4 bg-slate-100 rounded-lg">
+                                <h4 class="font-bold">Diverticulitis Aguda No Complicada</h4>
+                                <p class="text-sm">(Inflamación localizada sin absceso, fístula o perforación)</p>
+                                <ul class="list-disc list-inside mt-2 text-sm">
+                                    <li><strong>Manejo ambulatorio:</strong> En pacientes seleccionados (sin comorbilidades, toleran vía oral, sin signos de sepsis).</li>
+                                    <li><strong>Tratamiento:</strong> Dieta líquida por 2-3 días, seguida de una dieta blanda. Los antibióticos orales (ej. Amoxicilina/clavulánico o Ciprofloxacino + Metronidazol) son opcionales en casos muy leves, pero se suelen indicar.</li>
+                                    <li><strong>Manejo hospitalario:</strong> Para pacientes que no cumplen criterios de manejo ambulatorio. Se indica régimen cero, hidratación IV y antibióticos IV.</li>
+                                </ul>
+                            </div>
+                            <div class="mt-4 p-4 bg-yellow-100 rounded-lg">
+                                <h4 class="font-bold">Diverticulitis Aguda Complicada</h4>
+                                <ul class="list-disc list-inside mt-2 text-sm">
+                                    <li><strong>Absceso pequeño (< 3-4 cm):</strong> Se maneja con antibióticos IV.</li>
+                                    <li><strong>Absceso grande (> 4 cm):</strong> Requiere <strong>drenaje percutáneo</strong> guiado por TC, además de los antibióticos IV.</li>
+                                    <li><strong>Perforación con peritonitis:</strong> Es una emergencia quirúrgica. Requiere una <strong>cirugía de Hartmann</strong> (resección del sigmoides afectado, creación de una colostomía terminal y cierre del muñón rectal) o, en casos seleccionados, una resección con anastomosis primaria.</li>
+                                </ul>
+                            </div>
+                             <h3 class="text-xl font-semibold mt-4 mb-2">Manejo a Largo Plazo</h3>
+                             <p>Después de un primer episodio de diverticulitis no complicada, se recomienda:</p>
+                             <ul class="list-disc list-inside mt-2 text-slate-600">
+                                <li>Dieta rica en fibra.</li>
+                                <li>Realizar una colonoscopía de control 6-8 semanas después.</li>
+                                <li>La cirugía electiva (sigmoidectomía) se considera en pacientes con episodios recurrentes o después de un episodio complicado.</li>
+                            </ul>
+                        `
+                    }
+                }
+            }
+        };
+
+        let currentChart = null;
+        
+        const navMenu = document.getElementById('nav-menu');
+        const contentArea = document.getElementById('content-area');
+        const welcomeScreen = document.getElementById('welcome-screen');
+        const pathologyContent = document.getElementById('pathology-content');
+        const pathologyTitle = document.getElementById('pathology-title');
+        const pathologyTabs = document.getElementById('pathology-tabs');
+        const pathologyTabContent = document.getElementById('pathology-tab-content');
+
+        const renderContent = (pathologyId) => {
+            if (!pathologiesData[pathologyId]) return;
+
+            welcomeScreen.classList.add('hidden');
+            pathologyContent.classList.remove('hidden');
+
+            const data = pathologiesData[pathologyId];
+            pathologyTitle.textContent = data.title;
+
+            pathologyTabs.innerHTML = '';
+            const tabKeys = Object.keys(data.tabs);
+
+            tabKeys.forEach((tabKey, index) => {
+                const tabButton = document.createElement('button');
+                tabButton.className = `tab-button text-sm md:text-base py-2 px-4 -mb-px border-b-2 font-semibold transition-colors duration-200 ${index === 0 ? 'border-sky-500 text-sky-600' : 'border-transparent text-slate-500 hover:text-sky-600 hover:border-sky-300'}`;
+                tabButton.textContent = data.tabs[tabKey].title;
+                tabButton.dataset.tab = tabKey;
+                pathologyTabs.appendChild(tabButton);
+            });
+
+            renderTabContent(pathologyId, tabKeys[0]);
+
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.addEventListener('click', () => {
+                    renderTabContent(pathologyId, button.dataset.tab);
+                });
+            });
+
+            document.querySelectorAll('.nav-button').forEach(button => {
+                if (button.dataset.pathology === pathologyId) {
+                    button.classList.add('bg-slate-900', 'text-sky-400');
+                } else {
+                    button.classList.remove('bg-slate-900', 'text-sky-400');
+                }
+            });
+        };
+
+        const renderTabContent = (pathologyId, tabKey) => {
+            if (currentChart) {
+                currentChart.destroy();
+                currentChart = null;
+            }
+
+            const data = pathologiesData[pathologyId].tabs[tabKey];
+            pathologyTabContent.innerHTML = data.content;
+
+            document.querySelectorAll('.tab-button').forEach(button => {
+                if (button.dataset.tab === tabKey) {
+                    button.className = 'tab-button text-sm md:text-base py-2 px-4 -mb-px border-b-2 font-semibold transition-colors duration-200 border-sky-500 text-sky-600';
+                } else {
+                    button.className = 'tab-button text-sm md:text-base py-2 px-4 -mb-px border-b-2 font-semibold transition-colors duration-200 border-transparent text-slate-500 hover:text-sky-600 hover:border-sky-300';
+                }
+            });
+
+            if (pathologyId === 'dhc' && tabKey === 'general') {
+                renderDhcChart();
+            }
+        };
+
+        const renderDhcChart = () => {
+            const ctx = document.getElementById('dhcChart')?.getContext('2d');
+            if (!ctx) return;
+
+            const data = {
+                labels: ['Hígado Graso No Alcohólico', 'Alcohol', 'Hepatitis Virales', 'Otras'],
+                datasets: [{
+                    label: 'Causas de DHC',
+                    data: [45, 30, 15, 10],
+                    backgroundColor: [
+                        'rgba(56, 189, 248, 0.7)', // sky-400
+                        'rgba(251, 146, 60, 0.7)', // orange-400
+                        'rgba(239, 68, 68, 0.7)',   // red-500
+                        'rgba(168, 162, 158, 0.7)' // stone-400
+                    ],
+                    borderColor: [
+                        'rgba(56, 189, 248, 1)',
+                        'rgba(251, 146, 60, 1)',
+                        'rgba(239, 68, 68, 1)',
+                        'rgba(168, 162, 158, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            };
+
+            currentChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: data,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                             labels: {
+                                font: {
+                                    size: 10
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed !== null) {
+                                        label += context.parsed + '%';
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        };
+
+        navMenu.addEventListener('click', (e) => {
+            if (e.target.matches('.nav-button')) {
+                const pathologyId = e.target.dataset.pathology;
+                renderContent(pathologyId);
+            }
+        });
+
+        // Cargar una patología por defecto al iniciar, o mostrar la bienvenida.
+        // renderContent('sii'); // Opcional: para abrir directamente en una patología
+    </script>
+</body>
+</html>
